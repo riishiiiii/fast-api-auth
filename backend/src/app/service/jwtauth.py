@@ -10,7 +10,8 @@ from models import models
 from schema.user import UserLogin, UserFields
 from sqlalchemy.orm import Session
 
-dotenv.load_dotenv(dotenv.find_dotenv(".env"))
+# dotenv.load_dotenv(dotenv.find_dotenv(".env"))
+dotenv.load_dotenv()
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 

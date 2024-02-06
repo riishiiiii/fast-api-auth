@@ -6,9 +6,7 @@ from enum import Enum
 
 class UserCreate(BaseModel):
     user_name: str
-    name: str
     email: EmailStr
-    phone_number: str
     password: str
 
 
