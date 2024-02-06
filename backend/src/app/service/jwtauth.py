@@ -1,5 +1,5 @@
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import Request, HTTPException
+from fastapi import Request, HTTPException, Depends
 import jwt
 import os
 import dotenv
@@ -10,61 +10,54 @@ from models import models
 from schema.user import UserLogin, UserFields
 from sqlalchemy.orm import Session
 
+from models.db import get_db
+
 # dotenv.load_dotenv(dotenv.find_dotenv(".env"))
 dotenv.load_dotenv()
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 
 
-class JWTBearer(HTTPBearer):
-    def __init__(self, auto_error: bool = True):
-        super(JWTBearer, self).__init__(auto_error=auto_error)
+class JWTBearerSecurity(HTTPBearer):
+    def __init__(self, auto_error: bool = True, permission: list = []) -> None:
+        self.permission = permission
+        super(JWTBearerSecurity, self).__init__(auto_error=auto_error)
 
-    async def __call__(self, request: Request):
+    async def __call__(self, request: Request, db: Session = Depends(get_db)):
         credentials: HTTPAuthorizationCredentials = await super(
-            JWTBearer, self
+            JWTBearerSecurity, self
         ).__call__(request)
+
+        if not credentials and self.auto_error:
+            raise HTTPException(
+                status_code=403, detail="Invalid authorization code."
+            )
+
         if credentials:
             if not credentials.scheme == "Bearer":
                 raise HTTPException(
                     status_code=403, detail="Invalid authentication scheme."
                 )
 
-            if not self.verify_jwt(credentials.credentials):
-                raise HTTPException(
-                    status_code=403, detail="Invalid token or expired token."
+            try:
+                jwt_payload = jwt.decode(
+                    credentials.credentials,
+                    JWT_SECRET_KEY,
+                    algorithms=["HS256"],
                 )
-            return credentials.credentials
-        else:
-            raise HTTPException(status_code=403, detail="Invalid authorization code.")
 
-    def verify_jwt(self, jwt_token: str) -> bool:
-        try:
-            payload = self.decode_jwt(jwt_token)
-        except:
-            payload = None
+            except jwt.ExpiredSignatureError:
+                raise HTTPException(
+                    status_code=403, detail="Token has expired."
+                )
 
-        if payload:
-            is_token_valid = True
-        else:
-            is_token_valid = False
+            except jwt.InvalidTokenError:
+                raise HTTPException(status_code=403, detail="Invalid token.")
 
-        return is_token_valid
+            return jwt_payload
 
-    def decode_jwt(self, token: str) -> dict:
-        try:
-            decoded_token = jwt.decode(token, JWT_SECRET_KEY, "HS256")
-            return decoded_token if decoded_token["exp"] >= time.time() else None
-        except:
-            return {}
-
-    async def get_jwt_payload(self, request: Request) -> dict:
-        credentials: HTTPAuthorizationCredentials = await self.__call__(request)
-        if credentials:
-            return self.decode_jwt(credentials)
-        else:
-            return {}
-
+        return credentials.credentials
+    
 
 def validate_user(db: Session, user: UserLogin):
     existing_user = (

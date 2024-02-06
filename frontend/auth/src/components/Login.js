@@ -76,7 +76,10 @@ export default function Login() {
                             <button type="submit" className="btn btn-primary mt-3">
                                 Login
                             </button>
+                           
                         </form>
+                        <br/>
+                        <a href="/register">Don't have an account </a>
                     </div>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ToastContainer, toast } from 'react-toastify';
+import {  toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 
@@ -23,7 +23,6 @@ export default function Register() {
             email: email,
             password: password,
         };
-        console.log(user);
         try {
             const response = await fetch('http://localhost:8001/auth/register/', {
                 method: 'POST',
@@ -69,6 +68,8 @@ export default function Register() {
                             </div>
                             <button type="submit" className="btn btn-primary mt-2">Register</button>
                         </form>
+                        <br/>
+                        <a href="/login">Already have an account </a>
                     </div>
                 </div>
             </div>
